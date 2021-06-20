@@ -3,6 +3,7 @@ import axios from "axios";
 
 const Search = () => {
   const [term, setTerm] = useState("programming");
+  const [debouncedTerm, setDebouncedTerm] = useState(term);
   const [results, setResults] = useState([]);
 
   // the useEffect function is somewhat like a lifecycle method.
@@ -12,6 +13,17 @@ const Search = () => {
   // no array means we want to run at initial render and run after every re render.
   // if array with value, we want to run at the initial render and we want to run the function after every re render if
   // some element inside the array changed last render.
+
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedTerm(term);
+    }, 500);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [term]);
+
   useEffect(() => {
     const search = async () => {
       const { data } = await axios.get("https://en.wikipedia.org/w/api.php", {
@@ -20,19 +32,17 @@ const Search = () => {
           list: "search",
           origin: "*",
           format: "json",
-          srsearch: term,
+          srsearch: debouncedTerm,
         },
       });
 
       setResults(data.query.search);
     };
 
-    const timeoutId = setTimeout(() => {
-      if (term) {
-        search();
-      }
-    }, 500);
-  }, [term]);
+    if (debouncedTerm) {
+      search();
+    }
+  }, [debouncedTerm]);
 
   // ONLY USE THE DANGERIOUSLYSETINNERHTML IF IT IS A TRUSTED SOURCE. THERE ARE SECURITY CONCERNS AROUND IT.
 
